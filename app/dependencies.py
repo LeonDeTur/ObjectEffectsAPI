@@ -26,3 +26,5 @@ logger.add(
     format=log_format,
     level="INFO",
 )
+
+urban_api_handler = APIHandler(config.get("URBAN_API"))
