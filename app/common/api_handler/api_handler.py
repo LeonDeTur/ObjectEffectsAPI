@@ -22,13 +22,13 @@ class APIHandler:
     @staticmethod
     async def _check_response_status(
             response: aiohttp.ClientResponse
-    ) -> list | dict:
+    ) -> list | dict | None:
         """Function handles response
 
         Args:
             response (aiohttp.ClientResponse): Response object
         Returns:
-            list|dict: requested data
+            list|dict: requested data with additional info, e.g. {"retry": True | False, "response": {response.json}}
         Raises:
             http_exception with response status code from API
         """
@@ -36,20 +36,18 @@ class APIHandler:
         if response.status in (200, 201):
             return await response.json(content_type="application/json")
         elif response.status == 500:
-            try:
-                raise http_exception(
-                    response.status,
-                    "Couldn't get data from API",
-                    _input=response.url.__str__(),
-                    _detail=await response.json(),
-                )
-            except:
-                raise http_exception(
-                    response.status,
-                    "Couldn't get data from API",
-                    _input=response.url.__str__(),
-                    _detail=await response.text(),
-                )
+            if response.content_type == "application/json":
+                response_info = await response.json()
+                if "reset by peer" in await response_info["error"]:
+                    return None
+            else:
+                response_info = await response.text()
+            raise http_exception(
+                response.status,
+                "Couldn't get data from API",
+                _input=response.url.__str__(),
+                _detail=response_info,
+            )
         else:
             raise http_exception(
                 response.status,
@@ -91,6 +89,13 @@ class APIHandler:
                 params=params
         ) as response:
             result = await self._check_response_status(response)
+            if not result:
+                return await  self.get(
+                    endpoint_url=endpoint_url,
+                    headers=headers,
+                    params=params,
+                    session=session,
+                )
             return result
 
     async def post(
@@ -123,13 +128,20 @@ class APIHandler:
                     session=session,
                 )
         url = self.base_url + endpoint_url
-        with session.post(
+        async with session.post(
             url=url,
             headers=headers,
             params=params,
             data=data,
         ) as response:
             result = await self._check_response_status(response)
+            if not result:
+                return await  self.post(
+                    endpoint_url=endpoint_url,
+                    headers=headers,
+                    params=params,
+                    session=session,
+                )
             return result
 
     async def put(
@@ -162,13 +174,20 @@ class APIHandler:
                     session=session,
                 )
         url = self.base_url + endpoint_url
-        with session.put(
+        async with session.put(
                 url=url,
                 headers=headers,
                 params=params,
                 data=data,
         ) as response:
             result = await self._check_response_status(response)
+            if not result:
+                return await  self.put(
+                    endpoint_url=endpoint_url,
+                    headers=headers,
+                    params=params,
+                    session=session,
+                )
             return result
 
     async def delete(
@@ -201,11 +220,18 @@ class APIHandler:
                     session=session,
                 )
         url = self.base_url + endpoint_url
-        with session.delete(
+        async with session.delete(
                 url=url,
                 headers=headers,
                 params=params,
                 data=data,
         ) as response:
             result = await self._check_response_status(response)
+            if not result:
+                return await  self.delete(
+                    endpoint_url=endpoint_url,
+                    headers=headers,
+                    params=params,
+                    session=session,
+                )
             return result
