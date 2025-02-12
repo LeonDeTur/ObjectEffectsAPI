@@ -8,7 +8,7 @@ from .dependencies import config
 app = FastAPI(
     title="ObjectNat effects API",
     description="API for calculating effects for territory by ObjectNat library",
-    version="0.0.1",
+    version=config.get("APP_VERSION"),
 )
 
 # Add CORS middleware
