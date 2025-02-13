@@ -29,25 +29,23 @@ class EffectsAPIGateway:
                 "year": year,
             }
         )
-        for service_type in response.json():
+        for service_type in response:
             if service_type["service_type"]["id"] == service_type_id:
                 if normative_value:=service_type["radius_availability_meters"]:
-                    return {
-                        "normative_value": normative_value,
-                        "normative_type": "dist"
-                    }
+                    service_type["normative_value"] = normative_value
+                    service_type["normative_type"] = "dist"
+                    return service_type
                 elif normative_value:=service_type["time_availability_minutes"]:
-                    return {
-                        "normative_value": normative_value,
-                        "normative_type": "time"
-                    }
+                    service_type["normative_value"] = normative_value
+                    service_type["normative_type"] = "time"
+                    return service_type
                 else:
                     raise http_exception(
                         status_code=400,
                         msg="Service type normative not found",
                         _input={"service_type_id": service_type_id},
                         _detail={
-                            "Available service ids": [service_type["id"] for service_type in response.json()]
+                            "Available service ids": [service_type["id"] for service_type in response]
                         },
                     )
         raise http_exception(
@@ -55,7 +53,7 @@ class EffectsAPIGateway:
             msg="Service type normative not found",
             _input={"service_type_id": service_type_id},
             _detail={
-                "Available service ids": [service_type["id"] for service_type in response.json()]
+                "Available service ids": [service_type["id"] for service_type in response]
             }
         )
 
