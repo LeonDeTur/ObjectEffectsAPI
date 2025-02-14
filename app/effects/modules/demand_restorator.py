@@ -1,13 +1,17 @@
 from typing import Literal
 
+import numpy as np
 import pandas as pd
 import geopandas as gpd
-from aiohttp import http_exceptions
+from objectnat import get_balanced_buildings
 
 from app.dependencies import http_exception
 
 
 class DemandRestorator:
+    """
+    Class for restoration demand and population for buildings layer
+    """
 
     @staticmethod
     def _restore_target_population(
@@ -25,44 +29,10 @@ class DemandRestorator:
         buildings = buildings.to_crs(local_crs)
         return sum(buildings.area * buildings["storey_counts"]) * 0.8/33
 
-    @staticmethod
-    def _restore_demands(
-            buildings: gpd.GeoDataFrame,
-            service_normative: int,
-            service_normative_type: Literal["", ""]
-    ) -> gpd.GeoDataFrame:
-        """
-        Function restores demands for service
-        Args:
-            service_normative (int): service normative
-            service_normative_type (str): service normative type
-        Returns:
-            gdp.GeoDataFrame: buildings data with restored demands
-        """
-
-        if service_normative_type == "":
-            return buildings
-        elif service_normative_type == "":
-            return buildings
-        else:
-            raise http_exception(
-                status_code=400,
-                msg="Service demand normative not found",
-                _input={
-                    "service_normative_type": service_normative_type,
-                },
-                _detail={
-                    "available_demand_type": [
-                        "", ""
-                    ]
-                }
-            )
-
     def restore_population(
             self,
             buildings: gpd.GeoDataFrame,
             target_population: int | None = None,
-
     ):
         """
         Function fills population data with objectnat population restoration
@@ -73,4 +43,75 @@ class DemandRestorator:
 
         if not target_population:
             target_population = self._restore_target_population(buildings)
+        balanced_buildings = get_balanced_buildings(
+            living_buildings=buildings,
+            population=target_population,
+        )
+        return balanced_buildings
 
+    @staticmethod
+    def _generate_demand_per_building(
+            buildings: gpd.GeoDataFrame,
+            target_demand: int |float
+    ) -> pd.DataFrame | gpd.GeoDataFrame:
+        """
+        Function generates random demands by probability with population data per building
+        Args:
+            buildings (gpd.GeoDataFrame): living buildings data
+            target_demand (float): target demand data
+        Returns:
+            gpd.GeoDataFrame: weighted random demand data
+        """
+
+        p = buildings["population"] / buildings["population"].sum()
+        rng = np.random.default_rng(seed=0)
+        r = pd.Series(0, p.index)
+        choice = np.unique(rng.choice(p.index, int(target_demand), p=p.values), return_counts=True)
+        choice = r.add(pd.Series(choice[1], choice[0]), fill_value=0)
+        buildings["demand"] = choice.astype(int)
+        return buildings
+
+    def _restore_demands(
+            self,
+            buildings: gpd.GeoDataFrame,
+            service_normative: int,
+            service_normative_type: Literal["unit", "capacity"]
+    ) -> gpd.GeoDataFrame:
+        """
+        Function restores demands in buildings by population for service
+        Args:
+            buildings: living buildings data
+            service_normative (int): service normative
+            service_normative_type (str): service normative type
+        Returns:
+            gdp.GeoDataFrame: buildings data with restored demands
+        """
+
+        if service_normative_type == "capacity":
+            target_total_demand = buildings["population"].sum() / service_normative
+            return self._generate_demand_per_building(
+                buildings=buildings,
+                target_demand=target_total_demand
+            )
+        elif service_normative_type == "unit":
+            target_total_demand = buildings["population"].sum() / (buildings["population"].sum() / service_normative)
+            return self._generate_demand_per_building(
+                buildings=buildings,
+                target_demand=target_total_demand
+            )
+        else:
+            raise http_exception(
+                status_code=400,
+                msg="Service demand normative not found",
+                _input={
+                    "service_normative_type": service_normative_type,
+                },
+                _detail={
+                    "available_demand_type": [
+                        "num", "capacity"
+                    ]
+                }
+            )
+
+
+demand_restorator = DemandRestorator()
