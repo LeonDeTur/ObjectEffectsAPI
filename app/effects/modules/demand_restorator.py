@@ -8,10 +8,29 @@ from objectnat import get_balanced_buildings
 from app.dependencies import http_exception
 
 
-class DemandRestorator:
+class DataRestorator:
     """
     Class for restoration demand and population for buildings layer
     """
+
+    @staticmethod
+    def _restore_stores(
+            buildings: gpd.GeoDataFrame,
+    ) -> gpd.GeoDataFrame:
+        """
+        Function to restore stores from db, have to include columns stores_count
+        Args:
+            buildings (gpd.GeoDataFrame): buildings layer with "stores_count" attribute (column)\
+        Returns:
+            gpd.GeoDataFrame: restored buildings layer with "stores_count" attribute
+        """
+
+        if buildings["stores_count"].isnull().all():
+            buildings["stores_count"] = 3
+            return buildings
+        average_stores = buildings["stores_count"].mean()
+        buildings["stores_count"].fillna(average_stores, inplace=True)
+        return buildings
 
     @staticmethod
     def _restore_target_population(
@@ -29,7 +48,7 @@ class DemandRestorator:
         buildings = buildings.to_crs(local_crs)
         return sum(buildings.area * buildings["storey_counts"]) * 0.8/33
 
-    def restore_population(
+    def _restore_population(
             self,
             buildings: gpd.GeoDataFrame,
             target_population: int | None = None,
@@ -41,6 +60,7 @@ class DemandRestorator:
             target_population (int | None): Target population to restore, defaults to None
         """
 
+        buildings = self._restore_stores(buildings)
         if not target_population:
             target_population = self._restore_target_population(buildings)
         balanced_buildings = get_balanced_buildings(
@@ -52,7 +72,7 @@ class DemandRestorator:
     @staticmethod
     def _generate_demand_per_building(
             buildings: gpd.GeoDataFrame,
-            target_demand: int |float
+            target_demand: int |float,
     ) -> pd.DataFrame | gpd.GeoDataFrame:
         """
         Function generates random demands by probability with population data per building
@@ -71,11 +91,12 @@ class DemandRestorator:
         buildings["demand"] = choice.astype(int)
         return buildings
 
-    def _restore_demands(
+    def restore_demands(
             self,
             buildings: gpd.GeoDataFrame,
             service_normative: int,
-            service_normative_type: Literal["unit", "capacity"]
+            service_normative_type: Literal["unit", "capacity"],
+            target_population: int | None = None,
     ) -> gpd.GeoDataFrame:
         """
         Function restores demands in buildings by population for service
@@ -83,10 +104,15 @@ class DemandRestorator:
             buildings: living buildings data
             service_normative (int): service normative
             service_normative_type (str): service normative type
+            target_population (int | None): Target population to restore, defaults to None
         Returns:
             gdp.GeoDataFrame: buildings data with restored demands
         """
 
+        buildings = self._restore_population(
+            buildings=buildings,
+            target_population=target_population,
+        )
         if service_normative_type == "capacity":
             target_total_demand = buildings["population"].sum() / service_normative
             return self._generate_demand_per_building(
@@ -114,4 +140,4 @@ class DemandRestorator:
             )
 
 
-demand_restorator = DemandRestorator()
+data_restorator = DataRestorator()
