@@ -8,7 +8,7 @@ from scipy.spatial import KDTree
 class MatrixBuilder:
 
     @staticmethod
-    def availability_matrix(
+    def calculate_availability_matrix(
             buildings: gpd.GeoDataFrame,
             services: gpd.GeoDataFrame,
             normative_value: int,
