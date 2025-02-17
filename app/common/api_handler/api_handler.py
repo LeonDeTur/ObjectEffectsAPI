@@ -76,7 +76,7 @@ class APIHandler:
 
         if not session:
             async with aiohttp.ClientSession() as session:
-                return await  self.get(
+                return await self.get(
                     endpoint_url=endpoint_url,
                     headers=headers,
                     params=params,
@@ -90,7 +90,7 @@ class APIHandler:
         ) as response:
             result = await self._check_response_status(response)
             if not result:
-                return await  self.get(
+                return await self.get(
                     endpoint_url=endpoint_url,
                     headers=headers,
                     params=params,

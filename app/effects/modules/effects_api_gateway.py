@@ -67,7 +67,7 @@ class EffectsAPIGateway:
             dict with "geometry" field as dict with "type" and "coordinates" fields and field "base_scenario_id"
         """
 
-        response = urban_api_handler.get(
+        response = await urban_api_handler.get(
             endpoint_url=f"api/v1/projects/{project_id}/territory",
         )
 

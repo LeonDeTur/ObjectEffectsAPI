@@ -1,14 +1,18 @@
-from fastapi import APIRouter
+from typing import Annotated
+
+from fastapi import APIRouter, Depends
+
 
 from .dto.effects_dto import EffectsDTO
 from .shemas.effects_base_schema import EffectsSchema
+from .effects_service import effects_service
 
 
 effects_router = APIRouter(prefix="/effects")
 
-@effects_router.post("/effects")
+@effects_router.post("/evaluate_provision", response_model=EffectsSchema)
 async def calculate_effects(
-        params: EffectsDTO,
+        params: Annotated[EffectsDTO, Depends(EffectsDTO)],
 ) -> EffectsSchema:
     """
     Get method for retrieving effects with objectnat
@@ -18,5 +22,5 @@ async def calculate_effects(
     scenario ID: Scenario ID
     """
 
-    result = await calculate_effects(params)
-    return result
+    result = await effects_service.calculate_effects(params)
+    return EffectsSchema(**result)

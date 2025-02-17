@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .dependencies import config
+from .effects.effects_controller import effects_router
 
 
 app = FastAPI(
@@ -30,4 +31,6 @@ async def read_logs():
     async with aiofiles.open(config.get("LOGS_FILE")) as logs_file:
         logs = await logs_file.read()
         return logs[-1:-10000]
-        
+
+
+app.include_router(effects_router)
