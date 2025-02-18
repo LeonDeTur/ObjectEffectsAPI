@@ -91,6 +91,7 @@ class DataRestorator:
         buildings["demand"] = choice.astype(int)
         return buildings
 
+    # Todo review provision model or at least create capacity solver
     def restore_demands(
             self,
             buildings: gpd.GeoDataFrame,
@@ -113,13 +114,7 @@ class DataRestorator:
             buildings=buildings,
             target_population=target_population,
         )
-        if service_normative_type == "capacity":
-            target_total_demand = buildings["population"].sum() / service_normative
-            return self._generate_demand_per_building(
-                buildings=buildings,
-                target_demand=target_total_demand
-            )
-        elif service_normative_type == "unit":
+        if service_normative_type == "unit":
             target_total_demand = buildings["population"].sum() / (buildings["population"].sum() / service_normative)
             return self._generate_demand_per_building(
                 buildings=buildings,
