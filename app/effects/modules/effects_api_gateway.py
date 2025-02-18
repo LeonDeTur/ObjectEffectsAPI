@@ -36,7 +36,7 @@ class EffectsAPIGateway:
                 if normative_value:=service_type["radius_availability_meters"]:
                     service_type["normative_value"] = normative_value
                     service_type["normative_type"] = "dist"
-                    if service_type.get(["services_per_1000_normative"]):
+                    if service_type.get("services_per_1000_normative"):
                         service_type["capacity_type"] = "unit"
                     else:
                         service_type["capacity_type"] = "capacity"
@@ -44,7 +44,7 @@ class EffectsAPIGateway:
                 elif normative_value:=service_type["time_availability_minutes"]:
                     service_type["normative_value"] = normative_value
                     service_type["normative_type"] = "time"
-                    if service_type.get(["services_per_1000_normative"]):
+                    if service_type.get("services_per_1000_normative"):
                         service_type["capacity_type"] = "unit"
                     else:
                         service_type["capacity_type"] = "capacity"
@@ -221,7 +221,7 @@ class EffectsAPIGateway:
         """
 
         task_list = [urban_api_handler.get(
-            endpoint_url=f"/api/v1/territory/{territory_id}/indicators_values",
+            endpoint_url=f"/api/v1/territory/{territory_id}/indicator_values",
             params={
                 "indicators_ids": 1
             }

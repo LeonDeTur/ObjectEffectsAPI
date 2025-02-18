@@ -25,11 +25,11 @@ class DataRestorator:
             gpd.GeoDataFrame: restored buildings layer with "stores_count" attribute
         """
 
-        if buildings["stores_count"].isnull().all():
-            buildings["stores_count"] = 3
+        if buildings["storeys_count"].isnull().all():
+            buildings["storeys_count"] = 3
             return buildings
-        average_stores = buildings["stores_count"].mean()
-        buildings["stores_count"].fillna(average_stores, inplace=True)
+        average_stores = buildings["storeys_count"].mean()
+        buildings["storeys_count"].fillna(average_stores, inplace=True)
         return buildings
 
     @staticmethod
@@ -46,7 +46,7 @@ class DataRestorator:
 
         local_crs = buildings.estimate_utm_crs()
         buildings = buildings.to_crs(local_crs)
-        return sum(buildings.area * buildings["storey_counts"]) * 0.8/33
+        return int(sum(buildings.area * buildings["storeys_count"]) * 0.8/33)
 
     def _restore_population(
             self,
@@ -63,6 +63,7 @@ class DataRestorator:
         buildings = self._restore_stores(buildings)
         if not target_population:
             target_population = self._restore_target_population(buildings)
+        buildings["living_area"] = buildings.area * buildings["storeys_count"]
         balanced_buildings = get_balanced_buildings(
             living_buildings=buildings,
             population=target_population,
@@ -114,8 +115,8 @@ class DataRestorator:
             buildings=buildings,
             target_population=target_population,
         )
-        if service_normative_type == "unit":
-            target_total_demand = buildings["population"].sum() / (buildings["population"].sum() / service_normative)
+        if service_normative_type == "capacity":
+            target_total_demand = buildings["population"].sum() / 1000 * service_normative
             return self._generate_demand_per_building(
                 buildings=buildings,
                 target_demand=target_total_demand

@@ -47,7 +47,7 @@ class EffectsService:
             living_buildings=context_buildings,
         )
         context_buildings = await data_restorator.restore_demands(
-            living_buildings=context_buildings,
+            buildings=context_buildings,
             service_normative=normative_data["normative_value"],
             service_normative_type=normative_data["capacity_type"],
             target_population=context_population,
