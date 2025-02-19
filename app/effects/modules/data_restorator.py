@@ -48,6 +48,7 @@ class DataRestorator:
         buildings = buildings.to_crs(local_crs)
         return int(sum(buildings.area * buildings["storeys_count"]) * 0.8/33)
 
+    # ToDo delete crs transformation
     def _restore_population(
             self,
             buildings: gpd.GeoDataFrame,
@@ -63,12 +64,15 @@ class DataRestorator:
         buildings = self._restore_stores(buildings)
         if not target_population:
             target_population = self._restore_target_population(buildings)
-        buildings["living_area"] = buildings.area * buildings["storeys_count"]
+        local_crs = buildings.estimate_utm_crs()
+        buildings = buildings.to_crs(local_crs)
+        buildings["living_area"] = buildings.area * buildings["storeys_count"] * 0.8
+        buildings["living_area"] = buildings["living_area"].astype(int)
         balanced_buildings = get_balanced_buildings(
             living_buildings=buildings,
-            population=target_population,
+            population=int(target_population),
         )
-        return balanced_buildings
+        return balanced_buildings.to_crs(4326)
 
     @staticmethod
     def _generate_demand_per_building(
