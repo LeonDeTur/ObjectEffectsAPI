@@ -88,7 +88,7 @@ class AttributeParser:
             gpd.GeoDataFrame: service capacity with parsed storeys data. Can be empty
         """
 
-        services["capacity"] = asyncio.to_thread(
+        services["capacity"] = await asyncio.to_thread(
             services["services"].apply,
             lambda x: x[0].get("capacity_real")
         )

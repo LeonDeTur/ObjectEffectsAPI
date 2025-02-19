@@ -46,7 +46,8 @@ class EffectsService:
         context_buildings = await attribute_parser.parse_all_from_buildings(
             living_buildings=context_buildings,
         )
-        context_buildings = await data_restorator.restore_demands(
+        context_buildings = await asyncio.to_thread(
+            data_restorator.restore_demands,
             buildings=context_buildings,
             service_normative=normative_data["normative_value"],
             service_normative_type=normative_data["capacity_type"],
@@ -57,7 +58,7 @@ class EffectsService:
             service_type_id=effects_params.service_type_id,
         )
         context_services = await attribute_parser.parse_service_capacity(
-            service_capacity=context_services,
+            services=context_services,
         )
         target_scenario_population = await effects_api_gateway.get_scenario_population_data(
             scenario_id=effects_params.scenario_id,
@@ -68,8 +69,9 @@ class EffectsService:
         target_scenario_buildings = await attribute_parser.parse_all_from_buildings(
             living_buildings=target_scenario_buildings,
         )
-        target_scenario_buildings = await data_restorator.restore_demands(
-            living_buildings=target_scenario_buildings,
+        target_scenario_buildings = await asyncio.to_thread(
+            data_restorator.restore_demands,
+            buildings=target_scenario_buildings,
             service_normative=normative_data["normative_value"],
             service_normative_type=normative_data["capacity_type"],
             target_population=target_scenario_population,
@@ -79,13 +81,13 @@ class EffectsService:
             service_type_id=effects_params.service_type_id,
         )
         base_scenario_buildings = await effects_api_gateway.get_scenario_buildings(
-            scenario_id=project_data["base_scenario_id"]["id"]
+            scenario_id=project_data["base_scenario"]["id"]
         )
         base_scenario_buildings = await attribute_parser.parse_all_from_buildings(
             living_buildings=base_scenario_buildings,
         )
         base_scenario_services = await effects_api_gateway.get_scenario_services(
-            scenario_id=project_data["base_scenario_id"]["id"],
+            scenario_id=project_data["base_scenario"]["id"],
             service_type_id=effects_params.service_type_id,
         )
         after_buildings = await asyncio.to_thread(

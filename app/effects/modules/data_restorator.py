@@ -29,7 +29,7 @@ class DataRestorator:
             buildings["storeys_count"] = 3
             return buildings
         average_stores = buildings["storeys_count"].mean()
-        buildings["storeys_count"].fillna(average_stores, inplace=True)
+        buildings["storeys_count"] = buildings["storeys_count"].fillna(average_stores)
         return buildings
 
     @staticmethod
@@ -121,10 +121,11 @@ class DataRestorator:
         )
         if service_normative_type == "capacity":
             target_total_demand = buildings["population"].sum() / 1000 * service_normative
-            return self._generate_demand_per_building(
+            buildings = self._generate_demand_per_building(
                 buildings=buildings,
                 target_demand=target_total_demand
             )
+            return buildings
         else:
             raise http_exception(
                 status_code=400,
