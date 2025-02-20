@@ -10,7 +10,7 @@ from .effects_service import effects_service
 
 effects_router = APIRouter(prefix="/effects")
 
-@effects_router.post("/evaluate_provision", response_model=EffectsSchema)
+@effects_router.get("/evaluate_provision", response_model=EffectsSchema)
 async def calculate_effects(
         params: Annotated[EffectsDTO, Depends(EffectsDTO)],
 ) -> EffectsSchema:

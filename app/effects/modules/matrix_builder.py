@@ -36,8 +36,9 @@ class MatrixBuilder:
         services_kd_tree = KDTree(services_points)
         distances = buildings_kd_tree.sparse_distance_matrix(
             other=services_kd_tree,
-            max_distance=normative_value * 1.5)
+            max_distance=normative_value * 3)
         matrix = pd.DataFrame.sparse.from_spmatrix(distances, index=buildings.index, columns=services.index)
+        matrix = matrix.sparse.to_dense()
         return matrix
 
 

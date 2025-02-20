@@ -25,13 +25,13 @@ class FeatureCollectionSchema(BaseModel):
 
 class ProvisionSchema(BaseModel):
 
-    provision: FeatureCollectionSchema
+    buildings: FeatureCollectionSchema
     services: FeatureCollectionSchema
     links: FeatureCollectionSchema
 
 
 class EffectsSchema(BaseModel):
 
-    provision_before: ProvisionSchema
-    provision_after: ProvisionSchema
+    before_prove_data: ProvisionSchema
+    after_prove_data: ProvisionSchema
     effects: FeatureCollectionSchema

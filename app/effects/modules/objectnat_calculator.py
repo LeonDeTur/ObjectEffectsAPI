@@ -36,66 +36,145 @@ class ObjectNatCalculator:
         )
 
         return {
-            "buildings": buildings,
-            "services": services,
+            "buildings": build_prov,
+            "services": services_prov,
             "links": links_prov,
         }
 
     @staticmethod
-    def _calculate_effects(
-            effects: pd.DataFrame | gpd.GeoDataFrame,
-            prov_type: Literal["within", "without"],
-            mark_type: Literal["absolute", "relative"]
+    def _calculate_index(
+            supplied_demand_after: pd.Series,
+            supplied_demand_before: pd.Series,
+            unsupplied_demand_after: pd.Series,
+            unsupplied_demand_before: pd.Series,
+            total_demand: int
     ) -> pd.Series:
         """
-        Function calculates provision effects
+        Function calculates index effects marks for provided objects
         Args:
-            effects (pd.DataFrame | gpd.GeoDataFrame): GeoDataFrame of effects
-            prov_type (Literal["within", "without"]): "within" or "without" provision to estimate effects
-            mark_type: "absolute" or "relative", effects the value, relative from -1 to 0, absolute in int values
-        Returns:
-            pd.Series: effects results
+            supplied_demand_after (pd.Series): supplied demand for target scenario
+            supplied_demand_before (pd.Series): supplied demand for base scenario
+            unsupplied_demand_after (pd.Series): unsupplied demand for target scenario
+            unsupplied_demand_before (pd.Series): unsupplied demand for base scenario
+            total_demand(int): total demand for target scenario + base scenario
         """
 
-        if prov_type not in ("within", "without"):
-            raise http_exception(
-                status_code=500,
-                msg=f"Invalid provision type{prov_type}",
-                _input={
-                    "prov_type": prov_type,
-                },
-                _detail={
-                    "Supported prov_types": ["within", "without"],
-                }
-            )
-        supplied_demand_before = effects[f"supplied_demand_{prov_type}_before"].fillna(0)
-        supplied_demand_after = effects[f"supplied_demand_{prov_type}_after"].fillna(0)
-        unsupplied_demand_before = effects[f"us_demand_{prov_type}_before"].fillna(0)
-        unsupplied_demand_after = effects[f"us_demand_{prov_type}_after"].fillna()
-        if mark_type == "relative":
-            total_population = effects["demand"].sum()
-            return (
-                    (supplied_demand_after-supplied_demand_before) - (supplied_demand_after-supplied_demand_before)
-                    / total_population
-            )
-        elif mark_type == "absolute":
-            return (
+        return (
+                (supplied_demand_after - supplied_demand_before) - (unsupplied_demand_after - unsupplied_demand_before)
+                / total_demand
+        )
+
+    # ToDo fix is_project attribute
+    @staticmethod
+    def _calculate_absolute(
+            supplied_demand_after: pd.Series,
+            supplied_demand_before: pd.Series,
+            unsupplied_demand_after: pd.Series,
+            unsupplied_demand_before: pd.Series,
+    ) -> pd.Series:
+        """
+        Function calculates absolute effects marks for provided objects
+        Args:
+            supplied_demand_after (pd.Series): supplied demand for target scenario
+            supplied_demand_before (pd.Series): supplied demand for base scenario
+            unsupplied_demand_after (pd.Series): unsupplied demand for target scenario
+            unsupplied_demand_before (pd.Series): unsupplied demand for base scenario
+        """
+
+        return (
                     supplied_demand_after-supplied_demand_before
             ).apply(lambda x: max(0, x)) - (
                     unsupplied_demand_after-unsupplied_demand_before
             ).apply(lambda x: max(0, x))
-        else:
-            raise http_exception(
-                status_code=500,
-                msg=f"Unsupported effects calculation for mark_type {mark_type}.",
-                _input={
-                    "prov_type": prov_type,
-                },
-                _detail={
-                    "Supported mark_types": ["absolute", "relative"]
-                },
-            )
 
+    def _calculate_effects(
+            self,
+            effects: pd.DataFrame | gpd.GeoDataFrame,
+    ) -> pd.DataFrame | gpd.GeoDataFrame:
+        """
+        Function calculates provision effects
+        Args:
+            effects (pd.DataFrame | gpd.GeoDataFrame): GeoDataFrame of effects
+        Returns:
+            pd.Series: effects results
+        """
+
+        effects = effects.copy()
+        supplied_demand_within_before = effects["supplyed_demands_within_before"].fillna(0)
+        supplied_demand_without_before = effects["supplyed_demands_without_before"].fillna(0)
+        supplied_demand_within_after = effects["supplyed_demands_within_after"].fillna(0)
+        supplied_demand_without_after = effects["supplyed_demands_without_after"].fillna(0)
+        unsupplied_demand_within_before = effects["us_demands_within_before"].fillna(0)
+        unsupplied_demand_without_before = effects["us_demands_without_before"].fillna(0)
+        unsupplied_demand_within_after = effects["us_demands_within_after"].fillna(0)
+        unsupplied_demand_without_after = effects["us_demands_without_after"].fillna(0)
+        total_supplied_demands_before = supplied_demand_without_before + supplied_demand_within_before
+        total_supplied_demands_after = supplied_demand_without_after + supplied_demand_within_after
+        total_us_demands_before = unsupplied_demand_without_before + unsupplied_demand_within_before
+        total_us_demands_after = unsupplied_demand_without_after + unsupplied_demand_within_after
+        total_demand = effects["demand"].sum()
+        project_total_supplied_demands_before = effects[
+            effects["is_project"]
+        ]["supplyed_demands_within_before"] + effects[
+            effects["is_project"]
+        ]["supplyed_demands_without_before"]
+        project_total_supplied_demands_after = effects[
+            effects["is_project"]
+        ]["supplyed_demands_without_after"] + effects[
+            effects["is_project"]
+        ]["supplyed_demands_within_after"]
+        project_total_us_demands_before = effects[
+            effects["is_project"]
+        ]["us_demands_within_before"] + effects[
+            effects["is_project"]
+        ]["us_demands_without_before"]
+        project_total_us_demands_after = effects[
+            effects["is_project"]
+        ]["us_demands_without_after"] + effects[
+            effects["is_project"]
+        ]["us_demands_within_after"]
+        project_total_demand = effects[effects["is_project"]]["demand"].sum()
+        effects["absolute_total"] = self._calculate_absolute(
+            supplied_demand_after=project_total_supplied_demands_after,
+            supplied_demand_before=project_total_supplied_demands_before,
+            unsupplied_demand_after=project_total_us_demands_after,
+            unsupplied_demand_before=project_total_us_demands_before,
+        )
+        effects["index_total"] = self._calculate_index(
+            supplied_demand_after=total_supplied_demands_after,
+            supplied_demand_before=total_supplied_demands_before,
+            unsupplied_demand_after=total_us_demands_after,
+            unsupplied_demand_before=total_us_demands_before,
+            total_demand=total_demand,
+        )
+        effects["absolute_scenario_project"] = self._calculate_absolute(
+            supplied_demand_before=project_total_supplied_demands_before,
+            supplied_demand_after=project_total_supplied_demands_after,
+            unsupplied_demand_after=total_us_demands_after,
+            unsupplied_demand_before=total_us_demands_before,
+        )
+        effects["index_scenario_project"] = self._calculate_index(
+            supplied_demand_after=project_total_supplied_demands_after,
+            supplied_demand_before=project_total_supplied_demands_before,
+            unsupplied_demand_after=project_total_us_demands_after,
+            unsupplied_demand_before=total_us_demands_before,
+            total_demand=project_total_demand,
+        )
+        effects["absolute_within"] = self._calculate_absolute(
+            supplied_demand_before=supplied_demand_within_before,
+            supplied_demand_after=supplied_demand_within_after,
+            unsupplied_demand_before=unsupplied_demand_within_before,
+            unsupplied_demand_after=unsupplied_demand_within_after
+        )
+        effects["absolute_without"] = self._calculate_absolute(
+            supplied_demand_before=supplied_demand_without_before,
+            supplied_demand_after=supplied_demand_without_after,
+            unsupplied_demand_before=unsupplied_demand_without_before,
+            unsupplied_demand_after=unsupplied_demand_without_after
+        )
+        return effects
+
+    # ToDo split function
     def estimate_effects(
             self,
             provision_before: gpd.GeoDataFrame,
@@ -109,50 +188,46 @@ class ObjectNatCalculator:
         Returns:
             gpd.GeoDataFrame: layer with effects, provision before and after attributes
         """
-
+        provision_before["supplyed_demands_within_before"] = provision_before["supplyed_demands_within"]
         provision_before[
             "us_demands_within_before"
-        ] = provision_before["demand"] - provision_before["supplied_demand_within"]
+        ] = provision_before["demand"] - provision_before["supplyed_demands_within_before"]
+        provision_before["supplyed_demands_without_before"] = provision_before["supplyed_demands_without"]
         provision_before[
             "us_demands_without_before"
-        ] = provision_before["demand"] - provision_before["supplied_demand_without"]
+        ] = provision_before["demand"] - provision_before["supplyed_demands_without"]
+        provision_after["supplyed_demands_within_after"] = provision_after["supplyed_demands_within"]
         provision_after[
             "us_demands_within_after"
-        ] = provision_after["demand"] - provision_after["supplied_demand_within"]
+        ] = provision_after["demand"] - provision_after["supplyed_demands_within_after"]
+        provision_after["supplyed_demands_without_after"] = provision_after["supplyed_demands_without"]
         provision_after[
             "us_demands_without_after"
-        ] = provision_after["demand"] - provision_after["supplied_demand_without"]
+        ] = provision_after["demand"] - provision_after["supplyed_demands_without_after"]
         effects = provision_after.merge(
             provision_before,
             how="outer",
-            on="building_id"
+            on=["building_id"]
         )
         effects["geometry"] = effects.apply(
-            lambda x: x["geometry_x"] if pd.isna(x["geometry_x"]) else x["geometry_y"],
+            lambda x: x["geometry_x"] if not pd.isna(x["geometry_x"]) else x["geometry_y"],
             axis=1
         )
-        effects["demand"] = effects["demand"].fillna(0) + effects["demand"].fillna(0)
-        effects["absolute_effects_within"] = self._calculate_effects(
-            effects=effects,
-            prov_type="within",
-            mark_type="absolute",
-        )
-        effects["relative_effects_within"] = self._calculate_effects(
-            effects=effects,
-            prov_type="within",
-            mark_type="relative",
-        )
-        effects["absolute_effects_without"] = self._calculate_effects(
-            effects=effects,
-            prov_type="without",
-            mark_type="absolute",
-        )
-        effects["relative_effects_without"] = self._calculate_effects(
-            effects=effects,
-            prov_type="without",
-            mark_type="relative",
-        )
-
+        effects.drop(columns=["geometry_x", "geometry_y"], inplace=True)
+        effects["demand"] = effects["demand_x"].fillna(0) + effects["demand_y"].fillna(0)
+        effects = self._calculate_effects(effects)
+        effects = effects[
+            [
+                "geometry",
+                "absolute_total",
+                "index_total",
+                "absolute_scenario_project",
+                "index_scenario_project",
+                "absolute_within",
+                "absolute_without"
+            ]
+        ]
+        effects = effects.gpd.GeoDataFrame(effects, geometry="geometry", crs=provision_before.crs)
         return effects
 
 

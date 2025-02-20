@@ -64,6 +64,8 @@ class AttributeParser:
         Returns:
             gpd.GeoDataFrame: living building area with parsed storeys data. Can be empty
         """
+
+        living_buildings = living_buildings.copy()
         if living_buildings.empty:
             return living_buildings
         living_buildings["storeys_count"] = await asyncio.to_thread(
@@ -74,10 +76,14 @@ class AttributeParser:
             living_buildings["physical_objects"].apply,
             self._parse_buildings_id,
         )
+        living_buildings = living_buildings.drop(
+            ['object_geometry_id', 'territory', 'address', 'osm_id', 'physical_objects', 'services'],
+            axis=1,
+        )
         return living_buildings
 
     @staticmethod
-    async def parse_service_capacity(
+    def _parse_service_capacity(
             services:gpd.GeoDataFrame,
     ) -> gpd.GeoDataFrame:
         """
@@ -88,9 +94,49 @@ class AttributeParser:
             gpd.GeoDataFrame: service capacity with parsed storeys data. Can be empty
         """
 
-        services["capacity"] = await asyncio.to_thread(
-            services["services"].apply,
-            lambda x: x[0].get("capacity_real")
+        services["capacity"] = services["services"].apply(lambda x: x[0].get("capacity_real"))
+        return services
+
+    @staticmethod
+    def _parse_service_id(
+            services: gpd.GeoDataFrame
+    ) -> gpd.GeoDataFrame:
+        """
+        Function parses service id from nested response
+        Args:
+            services (gpd.GeoDataFrame): nested response from api as feature collection
+        Returns:
+            gpd.GeoDataFrame: service id with parsed storeys data. Can be empty
+        """
+
+        services["service_id"] = services["services"].apply(lambda x: x[0].get("service_id"))
+        return services
+
+    async def parse_all_from_services(
+            self,
+            services: gpd.GeoDataFrame,
+    ) -> gpd.GeoDataFrame:
+        """
+        Function parses all required data from service request data
+        Args:
+            services (gpd.GeoDataFrame): nested response from api as feature collection
+        Returns:
+            gpd.GeoDataFrame: service capacity with parsed storeys data. Can be empty
+        """
+        services = services.copy()
+        if services.empty:
+            return services
+        services = await asyncio.to_thread(
+            self._parse_service_id,
+            services=services,
+        )
+        services = await asyncio.to_thread(
+            self._parse_service_capacity,
+            services=services
+        )
+        services = services.drop(
+            ['object_geometry_id', 'territory', 'address', 'osm_id', 'physical_objects', 'services'],
+            axis=1
         )
         return services
 

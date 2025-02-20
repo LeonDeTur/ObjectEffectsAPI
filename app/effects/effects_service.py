@@ -18,6 +18,7 @@ class EffectsService:
     Class for handling services calculation
     """
 
+    # ToDo Split function
     # ToDo Rewrite to context ids normal handling
     @staticmethod
     async def calculate_effects(effects_params: EffectsDTO) -> dict[str, dict]:
@@ -49,15 +50,16 @@ class EffectsService:
         context_buildings = await asyncio.to_thread(
             data_restorator.restore_demands,
             buildings=context_buildings,
-            service_normative=normative_data["normative_value"],
+            service_normative=normative_data["services_capacity_per_1000_normative"],
             service_normative_type=normative_data["capacity_type"],
             target_population=context_population,
         )
+        context_buildings["is_project"] = False
         context_services = await effects_api_gateway.get_project_context_services(
             project_id=effects_params.project_id,
             service_type_id=effects_params.service_type_id,
         )
-        context_services = await attribute_parser.parse_service_capacity(
+        context_services = await attribute_parser.parse_all_from_services(
             services=context_services,
         )
         target_scenario_population = await effects_api_gateway.get_scenario_population_data(
@@ -72,13 +74,17 @@ class EffectsService:
         target_scenario_buildings = await asyncio.to_thread(
             data_restorator.restore_demands,
             buildings=target_scenario_buildings,
-            service_normative=normative_data["normative_value"],
+            service_normative=normative_data["services_capacity_per_1000_normative"],
             service_normative_type=normative_data["capacity_type"],
             target_population=target_scenario_population,
         )
-        project_services = await effects_api_gateway.get_scenario_services(
+        target_scenario_buildings["is_project"] = True
+        target_scenario_services = await effects_api_gateway.get_scenario_services(
             scenario_id=effects_params.scenario_id,
             service_type_id=effects_params.service_type_id,
+        )
+        target_scenario_services = await attribute_parser.parse_all_from_services(
+            services=target_scenario_services,
         )
         base_scenario_buildings = await effects_api_gateway.get_scenario_buildings(
             scenario_id=project_data["base_scenario"]["id"]
@@ -86,9 +92,13 @@ class EffectsService:
         base_scenario_buildings = await attribute_parser.parse_all_from_buildings(
             living_buildings=base_scenario_buildings,
         )
+        base_scenario_buildings["is_project"] = True
         base_scenario_services = await effects_api_gateway.get_scenario_services(
             scenario_id=project_data["base_scenario"]["id"],
             service_type_id=effects_params.service_type_id,
+        )
+        base_scenario_services = await attribute_parser.parse_all_from_services(
+            services=base_scenario_services,
         )
         after_buildings = await asyncio.to_thread(
             pd.concat,
@@ -96,16 +106,20 @@ class EffectsService:
         )
         after_services = await asyncio.to_thread(
             pd.concat,
-            objs=[context_services, project_services]
+            objs=[context_services, target_scenario_services]
         )
         before_buildings = await  asyncio.to_thread(
             pd.concat,
-            objs=[context_buildings, base_scenario_buildings]
+            objs=[context_buildings, base_scenario_buildings],
         )
         before_services = await asyncio.to_thread(
             pd.concat,
             objs=[context_services, base_scenario_services]
         )
+        after_buildings.set_index("building_id", inplace=True)
+        after_services.set_index("service_id", inplace=True)
+        before_buildings.set_index("building_id", inplace=True)
+        before_services.set_index("service_id", inplace=True)
         local_crs = target_scenario_buildings.estimate_utm_crs()
         before_buildings.to_crs(local_crs, inplace=True)
         before_services.to_crs(local_crs, inplace=True)
@@ -127,8 +141,8 @@ class EffectsService:
         )
         before_prove_data = await asyncio.to_thread(
             objectnat_calculator.evaluate_provision,
-            buildings=context_buildings,
-            services=context_services,
+            buildings=before_buildings,
+            services=before_services,
             matrix=before_matrix,
             service_normative=normative_data["normative_value"],
         )
@@ -141,21 +155,27 @@ class EffectsService:
         )
         effects = await asyncio.to_thread(
             objectnat_calculator.estimate_effects,
-            before_prove_data=before_prove_data["provision"],
-            after_prove_data=after_prove_data["provision"],
+            provision_before=before_prove_data["buildings"],
+            provision_after=after_prove_data["buildings"],
         )
         result = {
             "before_prove_data": {
-                "provision": json.load(before_prove_data["provision"].to_crs(4326).to_json()),
-                "services": json.load(before_prove_data["services"]).to_crs(4326).to_json(),
-                "links": json.load(before_prove_data["links"].to_crs(4326).to_json()),
+                "buildings": json.loads(
+                    before_prove_data["buildings"].to_crs(4326).to_json()
+                ),
+                "services": json.loads(
+                    before_prove_data["services"].to_crs(4326).to_json()
+                ),
+                "links": json.loads(before_prove_data["links"].to_crs(4326).to_json()),
             },
             "after_prove_data": {
-                "provision": json.load(after_prove_data["provision"].to_crs(4326).to_json()),
-                "services": json.load(after_prove_data["services"].to_crs(4326).to_json()),
-                "links": json.load(after_prove_data["links"].to_crs(4326).to_json()),
+                "buildings": json.loads(
+                    after_prove_data["buildings"].to_crs(4326).to_json()
+                ),
+                "services": json.loads(after_prove_data["services"].to_crs(4326).to_json()),
+                "links": json.loads(after_prove_data["links"].to_crs(4326).to_json()),
             },
-            "effects": json.load(effects.to_crs(4326).json()),
+            "effects": json.loads(effects.to_crs(4326).to_json()),
         }
         return result
 
