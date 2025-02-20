@@ -18,10 +18,47 @@ class EffectsService:
     Class for handling services calculation
     """
 
+    @staticmethod
+    async def _get_pivot(
+            effects: pd.DataFrame | gpd.GeoDataFrame,
+    ) -> dict[str, int | float]:
+        """
+        Function creates a pivot table for effects data
+        Args:
+            effects (pd.DataFrame | gpd.GeoDataFrame): effects data
+        Returns:
+            dict[str, int | float]: pivot table for effects data
+        """
+
+        return {
+            "sum_absolute_total": int(effects["absolute_total"].sum()),
+            "average_absolute_total": effects["absolute_total"].mean(),
+            "median_absolute_total": int(effects["absolute_total"].median()),
+            "average_index_total": effects["index_total"].mean(),
+            "median_index_total": int(effects["index_total"].median()),
+            "sum_absolute_scenario_project": int(
+                effects[effects["is_project"]]["absolute_scenario_project"].sum()
+            ),
+            "average_absolute_scenario_project": effects[effects["is_project"]]["absolute_scenario_project"].mean(),
+            "median_absolute_scenario_project": int(
+                effects[effects["is_project"]]["absolute_scenario_project"].median()
+            ),
+            "average_index_scenario_project": effects[effects["is_project"]]["index_scenario_project"].mean(),
+            "median_index_scenario_project": int(effects[effects["is_project"]]["index_scenario_project"].median()),
+            "sum_absolute_within": int(effects["absolute_within"].sum()),
+            "average_absolute_within": effects["absolute_within"].mean(),
+            "median_absolute_within": int(effects["absolute_within"].median()),
+            "sum_average_absolute_without": int(effects["absolute_without"].sum()),
+            "average_absolute_without": effects["absolute_without"].mean(),
+            "median_absolute_without": int(effects["absolute_without"].median()),
+        }
+
     # ToDo Split function
     # ToDo Rewrite to context ids normal handling
-    @staticmethod
-    async def calculate_effects(effects_params: EffectsDTO) -> dict[str, dict]:
+    async def calculate_effects(
+            self,
+            effects_params: EffectsDTO
+    ) -> dict[str, dict]:
         """
         Calculate provision effects by project data and target scenario
         Args:
@@ -158,6 +195,9 @@ class EffectsService:
             provision_before=before_prove_data["buildings"],
             provision_after=after_prove_data["buildings"],
         )
+
+        pivot = await self._get_pivot(effects)
+
         result = {
             "before_prove_data": {
                 "buildings": json.loads(
@@ -176,6 +216,7 @@ class EffectsService:
                 "links": json.loads(after_prove_data["links"].to_crs(4326).to_json()),
             },
             "effects": json.loads(effects.to_crs(4326).to_json()),
+            "pivot": pivot,
         }
         return result
 
