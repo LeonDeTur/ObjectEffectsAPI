@@ -1,0 +1,10 @@
+version: '3.4'
+
+services:
+  object_effects:
+    image: object_effects
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - 80:80

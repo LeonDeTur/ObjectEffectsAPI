@@ -1,2 +1,2 @@
-# ObectEffectsAPI
- Repository for evaluationg effects by ObjectNat library
+# ObjectEffectsAPI
+ Repository for evaluation effects by ObjectNat library
