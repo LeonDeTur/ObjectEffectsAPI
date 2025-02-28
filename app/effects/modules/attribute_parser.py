@@ -24,13 +24,7 @@ class AttributeParser:
              int | None: storeys count number or None if Not found
         """
 
-        if not (target_data:=data_row[0]["living_building"]):
-            return None
-        target_data = target_data["properties"].get("building_data")
-        if not target_data:
-            return None
-        stores_count = json.loads(target_data).get("storeys_count")
-        return stores_count
+        return data_row[0].get("stores_count")
 
     @staticmethod
     def _parse_buildings_id(
@@ -94,7 +88,7 @@ class AttributeParser:
             gpd.GeoDataFrame: service capacity with parsed storeys data. Can be empty
         """
 
-        services["capacity"] = services["services"].apply(lambda x: x[0].get("capacity_real"))
+        services["capacity"] = services["services"].apply(lambda x: x[0].get("capacity"))
         return services
 
     @staticmethod
