@@ -3,6 +3,7 @@ import asyncio
 
 import geopandas as gpd
 import pandas as pd
+from loguru import logger
 
 from app.dependencies import http_exception
 from .dto.effects_dto import EffectsDTO
@@ -76,7 +77,9 @@ class EffectsService:
         Returns:
              gpd.GeoDataFrame: Provision effects
         """
-
+        logger.info(
+            f"Started calculating effects for {effects_params.scenario_id} and service{effects_params.service_id}"
+        )
         project_data = await effects_api_gateway.get_project_data(
             effects_params.project_id
         )
@@ -215,7 +218,9 @@ class EffectsService:
             provision_before=before_prove_data["buildings"],
             provision_after=after_prove_data["buildings"],
         )
-
+        logger.info(
+            f"Calculated effects for {effects_params.scenario_id} and service type {effects_params.service_type_id}"
+        )
         pivot = await self._get_pivot(effects)
 
         result = {
