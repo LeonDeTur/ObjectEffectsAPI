@@ -36,11 +36,11 @@ class PivotSchema(BaseModel):
         median_absolute_total: int
         average_index_total: int | float
         median_index_total: int
-        sum_absolute_scenario_project: int
-        average_absolute_scenario_project: int | float
-        median_absolute_scenario_project: int
-        average_index_scenario_project: int | float
-        median_index_scenario_project: int
+        sum_absolute_scenario_project: Optional[int] = None
+        average_absolute_scenario_project: Optional[int | float] = None
+        median_absolute_scenario_project: Optional[int] = None
+        average_index_scenario_project: Optional[int | float] = None
+        median_index_scenario_project: Optional[int] = None
         sum_absolute_within: int
         average_absolute_within: int | float
         median_absolute_within: int
