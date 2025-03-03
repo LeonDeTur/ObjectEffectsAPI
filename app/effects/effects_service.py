@@ -4,6 +4,7 @@ import asyncio
 import geopandas as gpd
 import pandas as pd
 
+from app.dependencies import http_exception
 from .dto.effects_dto import EffectsDTO
 from .modules import (
     effects_api_gateway,
@@ -105,6 +106,13 @@ class EffectsService:
             project_id=effects_params.project_id,
             service_type_id=effects_params.service_type_id,
         )
+        if context_services.empty:
+            raise http_exception(
+                status_code=404,
+                msg="No services of {service_type_id} type found in context",
+                _input={"service_type_id": effects_params.service_type_id},
+                _detail={}
+            )
         context_services = await attribute_parser.parse_all_from_services(
             services=context_services,
         )
