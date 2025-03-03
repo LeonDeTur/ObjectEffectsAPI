@@ -13,42 +13,7 @@ class AttributeParser:
     """
 
     @staticmethod
-    def _get_stores_count(
-            data_row: list[dict]
-    ) -> int | None:
-        """
-        Function gets stores count data from nested buildings data response
-        Args:
-            data_row (list[dict]): nested data response from nested buildings data response
-        Returns:
-             int | None: storeys count number or None if Not found
-        """
-
-        return data_row[0].get("stores_count")
-
-    @staticmethod
-    def _parse_buildings_id(
-            data_row: list[dict]
-    ) -> int:
-        """
-        Function parse building id from nested data
-        Args:
-            data_row (list[dict]): nested data response from nested buildings data response
-        Returns:
-            int: buildings id
-        """
-
-        if not (target_data:=data_row[0]["physical_object_id"]):
-            raise http_exception(
-                status_code=404,
-                msg="Couldn't retrieve physical object id from db",
-                _input=data_row,
-                _detail={}
-            )
-        return target_data
-
     async def parse_all_from_buildings(
-            self,
             living_buildings: pd.DataFrame | gpd.GeoDataFrame,
     ) -> gpd.GeoDataFrame:
         """
@@ -64,11 +29,11 @@ class AttributeParser:
             return living_buildings
         living_buildings["storeys_count"] = await asyncio.to_thread(
             living_buildings["physical_objects"].apply,
-            self._get_stores_count,
+            lambda x: x[0]["building"]["floors"],
         )
         living_buildings["building_id"] = await asyncio.to_thread(
             living_buildings["physical_objects"].apply,
-            self._parse_buildings_id,
+            lambda x: x[0]["building"]["id"],
         )
         living_buildings = living_buildings.drop(
             ['object_geometry_id', 'territory', 'address', 'osm_id', 'physical_objects', 'services'],

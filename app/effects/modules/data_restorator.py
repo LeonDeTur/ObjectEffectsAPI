@@ -25,6 +25,8 @@ class DataRestorator:
             gpd.GeoDataFrame: restored buildings layer with "stores_count" attribute
         """
 
+        if buildings.empty:
+            return buildings
         if buildings["storeys_count"].isnull().all():
             buildings["storeys_count"] = 3
             return buildings
@@ -61,6 +63,8 @@ class DataRestorator:
             target_population (int | None): Target population to restore, defaults to None
         """
 
+        if buildings.empty:
+            return buildings
         buildings = self._restore_stores(buildings)
         if not target_population:
             target_population = self._restore_target_population(buildings)
@@ -115,6 +119,8 @@ class DataRestorator:
             gdp.GeoDataFrame: buildings data with restored demands
         """
 
+        if buildings.empty:
+            return buildings
         buildings = self._restore_population(
             buildings=buildings,
             target_population=target_population,

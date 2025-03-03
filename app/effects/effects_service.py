@@ -3,6 +3,7 @@ import asyncio
 
 import geopandas as gpd
 import pandas as pd
+from loguru import logger
 
 from app.dependencies import http_exception
 from .dto.effects_dto import EffectsDTO
@@ -31,21 +32,12 @@ class EffectsService:
             dict[str, int | float]: pivot table for effects data
         """
 
-        return {
+        result = {
             "sum_absolute_total": int(effects["absolute_total"].sum()),
             "average_absolute_total": effects["absolute_total"].mean(),
             "median_absolute_total": int(effects["absolute_total"].median()),
             "average_index_total": effects["index_total"].mean(),
             "median_index_total": int(effects["index_total"].median()),
-            "sum_absolute_scenario_project": int(
-                effects[effects["is_project"]]["absolute_scenario_project"].sum()
-            ),
-            "average_absolute_scenario_project": effects[effects["is_project"]]["absolute_scenario_project"].mean(),
-            "median_absolute_scenario_project": int(
-                effects[effects["is_project"]]["absolute_scenario_project"].median()
-            ),
-            "average_index_scenario_project": effects[effects["is_project"]]["index_scenario_project"].mean(),
-            "median_index_scenario_project": int(effects[effects["is_project"]]["index_scenario_project"].median()),
             "sum_absolute_within": int(effects["absolute_within"].sum()),
             "average_absolute_within": effects["absolute_within"].mean(),
             "median_absolute_within": int(effects["absolute_within"].median()),
@@ -53,6 +45,24 @@ class EffectsService:
             "average_absolute_without": effects["absolute_without"].mean(),
             "median_absolute_without": int(effects["absolute_without"].median()),
         }
+
+        if effects[effects["is_project"]].empty:
+            return result
+        result["median_index_scenario_project"] = int(effects[effects["is_project"]]["index_scenario_project"].median())
+        result["average_index_scenario_project"] = effects[effects["is_project"]]["index_scenariи o_project"].mean()
+        result["sum_absolute_scenario_project"] = int(
+            effects[effects["is_project"]]["absolute_scenario_project"].sum()
+        )
+        result["median_absolute_scenario_project"] = int(
+            effects[effects["is_project"]]["absolute_scenario_project"].median()
+        )
+        result["average_absolute_scenario_project"] = effects[effects["is_project"]]["absolute_scenario_project"].mean()
+        result["median_absolute_scenario_project"] = int(
+            effects[effects["is_project"]]["absolute_scenario_project"].median()
+        )
+        result["average_index_scenario_project"] = effects[effects["is_project"]]["index_scenariи o_project"].mean()
+        result["median_index_scenario_project"] = int(effects[effects["is_project"]]["index_scenario_project"].median())
+        return result
 
     # ToDo Split function
     # ToDo Rewrite to context ids normal handling
@@ -67,7 +77,9 @@ class EffectsService:
         Returns:
              gpd.GeoDataFrame: Provision effects
         """
-
+        logger.info(
+            f"Started calculating effects for {effects_params.scenario_id} and service{effects_params.service_id}"
+        )
         project_data = await effects_api_gateway.get_project_data(
             effects_params.project_id
         )
@@ -165,7 +177,10 @@ class EffectsService:
         after_services.set_index("service_id", inplace=True)
         before_buildings.set_index("building_id", inplace=True)
         before_services.set_index("service_id", inplace=True)
-        local_crs = target_scenario_buildings.estimate_utm_crs()
+        if target_scenario_buildings.empty:
+            local_crs = context_buildings.estimate_utm_crs()
+        else:
+            local_crs = target_scenario_buildings.estimate_utm_crs()
         before_buildings.to_crs(local_crs, inplace=True)
         before_services.to_crs(local_crs, inplace=True)
         after_buildings.to_crs(local_crs, inplace=True)
@@ -203,7 +218,9 @@ class EffectsService:
             provision_before=before_prove_data["buildings"],
             provision_after=after_prove_data["buildings"],
         )
-
+        logger.info(
+            f"Calculated effects for {effects_params.scenario_id} and service type {effects_params.service_type_id}"
+        )
         pivot = await self._get_pivot(effects)
 
         result = {
