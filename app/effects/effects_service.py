@@ -49,7 +49,7 @@ class EffectsService:
         if effects[effects["is_project"]].empty:
             return result
         result["median_index_scenario_project"] = int(effects[effects["is_project"]]["index_scenario_project"].median())
-        result["average_index_scenario_project"] = effects[effects["is_project"]]["index_scenariи o_project"].mean()
+        result["average_index_scenario_project"] = effects[effects["is_project"]]["index_scenario_project"].mean()
         result["sum_absolute_scenario_project"] = int(
             effects[effects["is_project"]]["absolute_scenario_project"].sum()
         )
@@ -60,7 +60,7 @@ class EffectsService:
         result["median_absolute_scenario_project"] = int(
             effects[effects["is_project"]]["absolute_scenario_project"].median()
         )
-        result["average_index_scenario_project"] = effects[effects["is_project"]]["index_scenariи o_project"].mean()
+        result["average_index_scenario_project"] = effects[effects["is_project"]]["index_scenario_project"].mean()
         result["median_index_scenario_project"] = int(effects[effects["is_project"]]["index_scenario_project"].median())
         return result
 
@@ -78,7 +78,7 @@ class EffectsService:
              gpd.GeoDataFrame: Provision effects
         """
         logger.info(
-            f"Started calculating effects for {effects_params.scenario_id} and service{effects_params.service_id}"
+            f"Started calculating effects for {effects_params.scenario_id} and service{effects_params.service_type_id}"
         )
         project_data = await effects_api_gateway.get_project_data(
             effects_params.project_id
