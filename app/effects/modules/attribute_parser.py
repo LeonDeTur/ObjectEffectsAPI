@@ -29,11 +29,11 @@ class AttributeParser:
             return living_buildings
         living_buildings["storeys_count"] = await asyncio.to_thread(
             living_buildings["physical_objects"].apply,
-            lambda x: x[0]["building"]["floors"],
+            lambda x: x[0]["building"]["floors"] if x[0]["building"] else None,
         )
         living_buildings["building_id"] = await asyncio.to_thread(
             living_buildings["physical_objects"].apply,
-            lambda x: x[0]["building"]["id"],
+            lambda x: x[0]["physical_object_id"],
         )
         living_buildings = living_buildings.drop(
             ['object_geometry_id', 'territory', 'address', 'osm_id', 'physical_objects', 'services'],
