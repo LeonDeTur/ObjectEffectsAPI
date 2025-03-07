@@ -32,7 +32,7 @@ class ObjectNatCalculator:
             buildings=buildings,
             services=services,
             adjacency_matrix=matrix,
-            threshold=service_normative,
+            threshold=service_normative*10,
         )
 
         return {
