@@ -1,5 +1,6 @@
 from typing import Literal
 
+import numpy as np
 import pandas as pd
 import geopandas as gpd
 from scipy.spatial import KDTree
@@ -26,7 +27,7 @@ class MatrixBuilder:
         """
 
         if normative_type == "time":
-            normative_value = normative_value * 1000/60
+            normative_value = normative_value * 1000/60 * 40
         local_crs = buildings.estimate_utm_crs()
         buildings = buildings.to_crs(local_crs).set_index(buildings.index, drop=True)
         services = services.to_crs(local_crs).set_index(services.index, drop=True)
@@ -39,6 +40,7 @@ class MatrixBuilder:
             max_distance=normative_value * 3)
         matrix = pd.DataFrame.sparse.from_spmatrix(distances, index=buildings.index, columns=services.index)
         matrix = matrix.sparse.to_dense()
+        matrix.replace(0.0, np.nan, inplace=True)
         return matrix
 
 
