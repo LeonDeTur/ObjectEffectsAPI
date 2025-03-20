@@ -113,10 +113,10 @@ class ObjectNatCalculator:
         unsupplied_demand_without_before = effects["us_demands_without_before"].fillna(0)
         unsupplied_demand_within_after = effects["us_demands_within_after"].fillna(0)
         unsupplied_demand_without_after = effects["us_demands_without_after"].fillna(0)
-        total_supplied_demands_before = supplied_demand_without_before
-        total_supplied_demands_after = supplied_demand_without_after
-        total_us_demands_before = unsupplied_demand_without_before
-        total_us_demands_after = unsupplied_demand_without_after
+        total_supplied_demands_before = supplied_demand_without_before + supplied_demand_within_before
+        total_supplied_demands_after = supplied_demand_without_after + supplied_demand_within_after
+        total_us_demands_before = unsupplied_demand_without_before + unsupplied_demand_within_before
+        total_us_demands_after = unsupplied_demand_without_after + unsupplied_demand_within_after
         total_demand = int(effects["demand"].sum())
         project_total_supplied_demands_before = effects[
             effects["is_project"]
