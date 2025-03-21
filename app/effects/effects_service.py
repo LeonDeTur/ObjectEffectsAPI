@@ -41,9 +41,6 @@ class EffectsService:
             "sum_absolute_within": int(effects["absolute_within"].sum()),
             "average_absolute_within": effects["absolute_within"].mean(),
             "median_absolute_within": int(effects["absolute_within"].median()),
-            "sum_average_absolute_without": int(effects["absolute_without"].sum()),
-            "average_absolute_without": effects["absolute_without"].mean(),
-            "median_absolute_without": int(effects["absolute_without"].median()),
         }
 
         if effects[effects["is_project"]].empty:
@@ -77,6 +74,7 @@ class EffectsService:
         Returns:
              gpd.GeoDataFrame: Provision effects
         """
+
         logger.info(
             f"Started calculating effects for {effects_params.scenario_id} and service{effects_params.service_type_id}"
         )

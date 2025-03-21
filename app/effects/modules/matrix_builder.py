@@ -27,7 +27,9 @@ class MatrixBuilder:
         """
 
         if normative_type == "time":
-            normative_value = normative_value * 1000/60 * 40
+            normative_value = (normative_value * 1000/60 * 40 )/1.41
+        else:
+            normative_value = (normative_value * 3) / 1.41
         local_crs = buildings.estimate_utm_crs()
         buildings = buildings.to_crs(local_crs).set_index(buildings.index, drop=True)
         services = services.to_crs(local_crs).set_index(services.index, drop=True)

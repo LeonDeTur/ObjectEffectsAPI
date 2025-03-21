@@ -44,9 +44,6 @@ class PivotSchema(BaseModel):
         sum_absolute_within: int
         average_absolute_within: int | float
         median_absolute_within: int
-        sum_average_absolute_without: int
-        average_absolute_without: int | float
-        median_absolute_without: int
 
 
 class EffectsSchema(BaseModel):
