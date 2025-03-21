@@ -89,7 +89,8 @@ class ObjectNatCalculator:
                     supplied_demand_after-supplied_demand_before
             ).apply(lambda x: max(0, x)) - (
                     unsupplied_demand_after-unsupplied_demand_before
-            ).apply(lambda x: max(0, x))
+            ).apply(lambda x: max(0, x)
+                    )
         return result
 
     def _calculate_effects(
@@ -194,7 +195,7 @@ class ObjectNatCalculator:
 
         provision_before[
             "supplyed_demands_without_before"
-        ] = provision_before["supplyed_demands_without"] + provision_before["supplyed_demands_without"]
+        ] = provision_before["supplyed_demands_without"]
 
         provision_before[
             "us_demands_without_before"
@@ -208,7 +209,7 @@ class ObjectNatCalculator:
 
         provision_after[
             "supplyed_demands_without_after"
-        ] = provision_after["supplyed_demands_without"] + provision_after["supplyed_demands_within"]
+        ] = provision_after["supplyed_demands_without"].copy()
 
         provision_after[
             "us_demands_without_after"
