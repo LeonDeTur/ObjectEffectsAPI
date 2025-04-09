@@ -223,7 +223,7 @@ class EffectsAPIGateway:
         task_list = [urban_api_handler.get(
             endpoint_url=f"/api/v1/territory/{territory_id}/indicator_values",
             params={
-                "indicators_ids": 1
+                "indicator_ids": 1
             }
         ) for territory_id in territory_ids_list]
 
