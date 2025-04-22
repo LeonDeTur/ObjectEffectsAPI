@@ -1,6 +1,7 @@
 import aiofiles
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from .dependencies import config
 from .effects.effects_controller import effects_router
@@ -21,6 +22,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/", response_model=dict[str, str])
+def read_root():
+    return RedirectResponse(url='/docs')
 
 @app.get("/status")
 async def read_root():
