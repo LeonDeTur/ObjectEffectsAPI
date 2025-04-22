@@ -171,8 +171,12 @@ class EffectsService:
             pd.concat,
             objs=[context_services, base_scenario_services]
         )
+        after_buildings.sort_values("is_project", ascending=False, inplace=True)
+        after_buildings.drop_duplicates("building_id", keep="first", inplace=True)
         after_buildings.set_index("building_id", inplace=True)
         after_services.set_index("service_id", inplace=True)
+        before_buildings.sort_values("is_project", ascending=False, inplace=True)
+        before_buildings.drop_duplicates("building_id", keep="first", inplace=True)
         before_buildings.set_index("building_id", inplace=True)
         before_services.set_index("service_id", inplace=True)
         if target_scenario_buildings.empty:
