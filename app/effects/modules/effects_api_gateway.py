@@ -1,5 +1,6 @@
 import asyncio
 
+from shapely.geometry import shape
 import geopandas as gpd
 
 from app.dependencies import urban_api_handler, http_exception
@@ -188,7 +189,7 @@ class EffectsAPIGateway:
     @staticmethod
     async def get_scenario_population_data(
             scenario_id: int | None
-    ) -> int:
+    ) -> int | None:
         """
         Function retrieves population data from urban_api
         Args:
@@ -230,6 +231,21 @@ class EffectsAPIGateway:
         result = await asyncio.gather(*task_list)
         return sum([item[0]["value"] for item in result])
 
+    @staticmethod
+    async def get_project_territory(project_id: int) -> gpd.GeoDataFrame:
+        """
+        Function retrieves territory data from urban_api
+        Args:
+            project_id: project id to get territory data from
+        Returns:
+            gpd.GeoDataFrame: territory data layer
+        """
+
+        territory = await urban_api_handler.get(
+            endpoint_url=f"/api/v1/projects/{project_id}/territory",
+        )
+        territory_gdf = gpd.GeoDataFrame(geometry=[shape(territory["geometry"])], crs=4326)
+        return territory_gdf
 
 
 effects_api_gateway = EffectsAPIGateway()
