@@ -81,6 +81,7 @@ class EffectsService:
         project_data = await effects_api_gateway.get_project_data(
             effects_params.project_id
         )
+        project_territory = await effects_api_gateway.get_project_territory(effects_params.project_id)
         normative_data = await effects_api_gateway.get_service_normative(
             territory_id=project_data["territory"]["id"],
             service_type_id=effects_params.service_type_id,
@@ -92,6 +93,7 @@ class EffectsService:
         context_buildings = await effects_api_gateway.get_project_context_buildings(
             project_id=effects_params.project_id,
         )
+        context_buildings.drop(index=context_buildings.sjoin(project_territory).index, inplace=True)
         context_buildings = await attribute_parser.parse_all_from_buildings(
             living_buildings=context_buildings,
         )

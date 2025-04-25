@@ -1,4 +1,5 @@
 import json
+from mailcap import subst
 from typing import Literal
 
 import pandas as pd
@@ -117,6 +118,8 @@ class ObjectNatCalculator:
         total_us_demands_before = effects["demand"] - total_supplied_demands_before
         total_us_demands_after = effects["demand"] - total_supplied_demands_after
         total_demand = int(effects["demand"].sum())
+
+        effects.dropna(subset="is_project", inplace=True)
 
         project_total_supplied_demands_before = effects[
             effects["is_project"]
