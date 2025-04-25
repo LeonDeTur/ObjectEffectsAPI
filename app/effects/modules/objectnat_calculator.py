@@ -1,5 +1,4 @@
 import json
-from mailcap import subst
 from typing import Literal
 
 import pandas as pd
