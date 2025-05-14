@@ -28,6 +28,7 @@ class ObjectNatCalculator:
             dict[str, gpd.GeoDataFrame]: dict with fields "buildings", "services" and "links"
         """
 
+
         build_prov, services_prov, links_prov = get_service_provision(
             buildings=buildings,
             services=services,
@@ -232,18 +233,18 @@ class ObjectNatCalculator:
         effects.drop("is_project_y", axis=1, inplace=True)
         effects.rename(columns={"is_project_x": "is_project"}, inplace=True)
         effects = self._calculate_effects(effects)
-        # effects = effects[
-        #     [
-        #         "geometry",
-        #         "absolute_total",
-        #         "index_total",
-        #         "absolute_scenario_project",
-        #         "index_scenario_project",
-        #         "absolute_within",
-        #         "demand",
-        #         "is_project"
-        #     ]
-        # ]
+        effects = effects[
+            [
+                "geometry",
+                "absolute_total",
+                "index_total",
+                "absolute_scenario_project",
+                "index_scenario_project",
+                "absolute_within",
+                "demand",
+                "is_project"
+            ]
+        ]
         effects = gpd.GeoDataFrame(effects, geometry="geometry", crs=provision_before.crs)
         return effects
 
