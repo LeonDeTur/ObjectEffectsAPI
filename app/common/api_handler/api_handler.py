@@ -89,7 +89,7 @@ class APIHandler:
                 params=params
         ) as response:
             result = await self._check_response_status(response)
-            if not result:
+            if result is None:
                 return await self.get(
                     endpoint_url=endpoint_url,
                     headers=headers,

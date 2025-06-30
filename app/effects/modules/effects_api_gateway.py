@@ -201,11 +201,12 @@ class EffectsAPIGateway:
         population = await urban_api_handler.get(
             endpoint_url=f"/api/v1/scenarios/{scenario_id}/indicators_values",
             params={
-                "indicators_ids": 1,
+                "indicator_ids": 1,
             }
         )
 
-        if (value:=population[0]["value"]) < 1:
+
+        if len(population) < 1 or (value:=population[0]["value"]) < 1:
             return None
         return value
 
